@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commodity Price Prediction</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h1, h2 { margin-top: 20px; color: #333; }
+        .table thead th { background-color: #333; color: #fff; }
+        .table tbody tr:nth-child(odd) { background-color: #f9f9f9; }
+        .form-inline label, .form-inline select { margin-right: 10px; }
+        .btn-primary { margin-top: 10px; }
+        #predictionResult { margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Commodity Price Prediction</h1>
+            <form id="predictionForm" class="form-inline mb-4">
+            <label for="commodity">Commodity:</label>
+            <select id="commodity" class="form-control">
+                {% for commodity in commodities %}
+                    <option value="{{ commodity }}">{{ commodity }}</option>
+                {% endfor %}
+            </select>
+            
+            <label for="market">Market:</label>
+            <select id="market" class="form-control">
+                {% for market in markets %}
+                    <option value="{{ market }}">{{ market }}</option>
+                {% endfor %}
+            </select>
+            
+            <button type="button" onclick="makePrediction()" class="btn btn-primary">Predict Price</button>
+        </form>
+        <div id="predictionResult" class="alert alert-info" style="display: none;"></div>
+        <h2>Commodity Price Data</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>State</th>
+                    <th>District</th>
+                    <th>Commodity</th>
+                    <th>Variety</th>
+                    <th>Grade</th>
+                    <th>Min Price</th>
+                    <th>Max Price</th>
+                    <th>Modal Price</th>
+                    <th>Commodity Code</th>
+                </tr>
+            </thead>
+            <tbody id="dataTableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function makePrediction() {
+            const commodity = document.getElementById('commodity').value;
+            const market = document.getElementById('market').value;
+
+            fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ commodity, market })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('predictionResult').style.display = 'none';
+                    alert(data.error);
+                } else {
+                    document.getElementById('predictionResult').style.display = 'block';
+                    document.getElementById('predictionResult').innerHTML = `
+                        Predicted Price for ${data.commodity} in ${data.market}: Rs ${data.predicted_price} / Quintal
+                    `;
+
+                    const dataTableBody = document.getElementById('dataTableBody');
+                    dataTableBody.innerHTML = '';  
+
+                    data.filtered_data.forEach(row => {
+                        const tableRow = `
+                            <tr>
+                                <td>${row.State}</td>
+                                <td>${row.District}</td>
+                                <td>${row.Commodity}</td>
+                                <td>${row.Variety}</td>
+                                <td>${row.Grade}</td>
+                                <td>${row.Min_Price}</td>
+                                <td>${row.Max_Price}</td>
+                                <td>${row.Modal_Price}</td>
+                                <td>${row.Commodity_Code}</td>
+                            </tr>
+                        `;
+                        dataTableBody.insertAdjacentHTML('beforeend', tableRow);
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
+
+
